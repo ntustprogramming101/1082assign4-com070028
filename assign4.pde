@@ -452,6 +452,8 @@ void draw() {
       int soldier_W=80;
       if (soldierX[i]<playerX+groundHog_W&& soldierX[i]+soldier_W>playerX
         && soldierY[i]<playerY+groundHog_W&& soldierY[i]+soldier_W>playerY) {
+          
+          
         leftState = false;
         rightState = false;
         downState = false;
@@ -460,6 +462,7 @@ void draw() {
         playerY=-grid;
         playerCol=4;
         playerRow=-1;
+        playerHealth-=1;
         soilHealth[4][0]=15;
       }
     }//for
