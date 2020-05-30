@@ -96,83 +96,10 @@ void setup() {
   playerMoveTimer = 0;
   playerHealth = 2;
 
+  // Initialize soil
+
   // Initialize soilHealth
-  soilHealth = new int[8][24];
-  for (int i = 0; i < soilHealth.length; i++) {
-    for (int j = 0; j < soilHealth[i].length; j++) {
-      // 0: no soil, 15: soil only, 30: 1 stone, 45: 2 stones
-      soilHealth[i][j] = 15;  //all the objects in this array =15
-
-
-      //AREA A(1-8) : soilHealth
-      if (j>=0 && j<8) {
-        if (j==i) {
-          soilHealth[i][j] = 30;
-          println(soilHealth[i][j]);
-        }
-      }//AREA A(1-8) : soilHealth
-
-      //AREA B(8-16): soilHealth
-      if (j>=8 && j<16 ) {
-        if (j%4==1||j%4==2) {
-          if (i%4==0||i%4==3) {
-            soilHealth[i][j] = 30;
-          }
-        }
-      } //AREA B(8-16): soilHealth A 
-      if (j>=8 && j<16 ) {
-        if (j%4==0||j%4==3) {
-          if (i%4==1||i%4==2) {
-            soilHealth[i][j] = 30;
-          }
-        }
-      } //AREA B(8-16): soilHealth B
-
-      //AREA C(16-24): soilHealth C
-      //stone1
-      if (j>=16 && j<24 ) {
-        if (j==16||j==19||j==22) {
-          if (i%3==1||i%3==2) {
-            soilHealth[i][j] = 30;
-          }
-          if (i%3==2) {
-            soilHealth[i][j] = 45;
-          }
-        }//i
-      }//if i>=16 <24
-
-      if (j>=16 && j<24 ) {
-        if (j==17||j==20||j==23) {
-          if (i%3==0||i%3==1) {
-            soilHealth[i][j] = 30;
-          }
-          if (i%3==1) {
-            soilHealth[i][j] = 45;
-          }
-        }//i
-      }//if i>=16 <24
-
-      if (j>=16 && j<24 ) {
-        if (j==18||j==21) {
-          if (i%3==0||i%3==2) {
-            soilHealth[i][j] = 30;
-          }
-          if (i%3==0) {
-            soilHealth[i][j] = 45;
-          }
-        }//if
-      }//AREA C(16-24): soilHealth C
-    }//NASTED LOOP
-  }//NASTED LOOP
-
-  //empty
-      for (int a =1; a<24; a++) {
-         for (int j = 1; j <= 1+ floor(random(0, 2)); j++) {
-        int pickcol = floor(random(0, 8));
-          soilHealth[pickcol][a] = 0;
-        
-      }
-    }//for pickNum
+  initSoils();
 
 
 
@@ -195,6 +122,74 @@ void setup() {
     cabbageY[i]=floor(random(0+i*4, 4+i*4))*grid;
   }
 }//void setup
+
+
+void initSoils() {
+  soilHealth = new int[SOIL_COL_COUNT][SOIL_ROW_COUNT];
+
+  int[] emptyGridCount = new int[SOIL_ROW_COUNT];
+
+  for (int j = 0; j < SOIL_ROW_COUNT; j++) {
+    emptyGridCount[j] = ( j == 0 ) ? 0 : floor(random(1, 3));
+  }
+
+  for (int i = 0; i < soilHealth.length; i++) {
+    for (int j = 0; j < soilHealth[i].length; j++) {
+      // 0: no soil, 15: soil only, 30: 1 stone, 45: 2 stones
+      float randRes = random(SOIL_COL_COUNT - i);
+
+      if (randRes < emptyGridCount[j]) {
+
+        soilHealth[i][j] = 0;
+        emptyGridCount[j] --;
+      } else {
+
+        soilHealth[i][j] = 15;
+
+        if (j < 8) {
+
+          if (j == i) soilHealth[i][j] = 2 * 15;
+        } else if (j < 16) {
+
+          int offsetJ = j - 8;
+          if (offsetJ == 0 || offsetJ == 3 || offsetJ == 4 || offsetJ == 7) {
+            if (i == 1 || i == 2 || i == 5 || i == 6) {
+              soilHealth[i][j] = 2 * 15;
+            }
+          } else {
+            if (i == 0 || i == 3 || i == 4 || i == 7) {
+              soilHealth[i][j] = 2 * 15;
+            }
+          }
+        } else {
+
+          int offsetJ = j - 16;
+          int stoneCount = (offsetJ + i) % 3;
+          soilHealth[i][j] = (stoneCount + 1) * 15;
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void draw() {
 
@@ -240,43 +235,32 @@ void draw() {
     noStroke();
     rect(0, -GRASS_HEIGHT, width, GRASS_HEIGHT);
 
-    // Soil
+     // Soil
 
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 24; j++) {
+    for (int i = 0; i < SOIL_COL_COUNT; i++) {
+      for (int j = 0; j < SOIL_ROW_COUNT; j++) {
 
+        if (soilHealth[i][j] > 0) {
 
-        // NOTE: To avoid errors on webpage, you can either use floor(j / 4) or (int)(j / 4) to make sure it's an integer.
-        int areaIndex = floor(j / 4);
-        int mapFrameImg =3; 
-        image(soils[areaIndex][4], i * SOIL_SIZE, j * SOIL_SIZE);
-          
-          
-        // Change this part to show soil and stone images based on soilHealth value
-        
-        //30
-        if (soilHealth[i][j]==30) {
-          image(stones[0][4], grid*i, grid*j);
-          image(stones[0][4], grid*i, grid*j);
+          int soilColor = (int) (j / 4);
+          int soilAlpha = (int) (min(5, ceil((float)soilHealth[i][j] / (15 / 5))) - 1);
+
+          image(soils[soilColor][soilAlpha], i * SOIL_SIZE, j * SOIL_SIZE);
+
+          if (soilHealth[i][j] > 15) {
+            int stoneSize = (int) (min(5, ceil(((float)soilHealth[i][j] - 15) / (15 / 5))) - 1);
+            image(stones[0][stoneSize], i * SOIL_SIZE, j * SOIL_SIZE);
+          }
+
+          if (soilHealth[i][j] > 15 * 2) {
+            int stoneSize = (int) (min(5, ceil(((float)soilHealth[i][j] - 15 * 2) / (15 / 5))) - 1);
+            image(stones[1][stoneSize], i * SOIL_SIZE, j * SOIL_SIZE);
+          }
+        } else {
+          image(soilEmpty, i * SOIL_SIZE, j * SOIL_SIZE);
         }
-        
-        
-        //45
-        if (soilHealth[i][j]==45) {
-          image(stones[01][4], grid*i, grid*j);
-          image(stones[1][4], grid*i, grid*j);
-        }
-
-        if (soilHealth[i][j]==0) {
-          image(soils[areaIndex][0], i * SOIL_SIZE, j * SOIL_SIZE);
-        }
-        
-        
-        
-        
       }
     }
-
 
 
 
